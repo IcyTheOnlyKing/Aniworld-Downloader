@@ -243,7 +243,7 @@ USES_DEFAULT_PROVIDER = False
 # E.g. Watch, Download, Syncplay
 DEFAULT_ACTION = "Download"
 DEFAULT_ANISKIP = False
-DEFAULT_DOWNLOAD_PATH = pathlib.Path.home() / "Downloads"
+DEFAULT_DOWNLOAD_PATH = "/home/icy/mediaFilesJellyfin/anime"
 DEFAULT_KEEP_WATCHING = False
 # German Dub, English Sub, German Sub
 DEFAULT_LANGUAGE = "German Sub"
