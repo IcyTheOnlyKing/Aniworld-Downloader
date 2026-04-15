@@ -2,6 +2,7 @@ import traceback
 import logging
 import sys
 from typing import List
+from urllib.parse import urlparse, urlunparse
 
 from .ascii_art import display_traceback_art
 from .action import watch, syncplay
@@ -11,7 +12,12 @@ from .search import search_anime
 from .execute import execute
 from .menu import menu
 from .common import generate_links
-from .config import S_TO
+from .config import S_TO, S_TO_HOST, S_TO_HOSTS, S_TO_LEGACY_HOST
+
+
+_S_TO_PARSED = urlparse(S_TO)
+_S_TO_SCHEME = _S_TO_PARSED.scheme
+_ANIWORLD_HOSTS = {"aniworld.to", "www.aniworld.to"}
 
 
 def _detect_site_from_url(url: str) -> str:
@@ -24,6 +30,15 @@ def _detect_site_from_url(url: str) -> str:
     Returns:
         Site identifier (ANIWORLD_TO, S_TO, etc.)
     """
+    parsed = urlparse(url)
+    host = parsed.netloc.lower()
+
+    if host in S_TO_HOSTS:
+        return "s.to"
+
+    if host in _ANIWORLD_HOSTS:
+        return "aniworld.to"
+
     for site, config in SUPPORTED_SITES.items():
         base_url = config["base_url"]
         if url.startswith(base_url):
@@ -31,6 +46,26 @@ def _detect_site_from_url(url: str) -> str:
 
     # Default to aniworld.to for backward compatibility
     return "aniworld.to"
+
+
+def _normalize_episode_link(link: str) -> str:
+    """Normalize incoming episode URLs for consistent processing."""
+    parsed = urlparse(link.strip())
+    host = parsed.netloc.lower()
+
+    if host in S_TO_HOSTS:
+        return urlunparse(
+            (
+                _S_TO_SCHEME,
+                S_TO_HOST,
+                parsed.path,
+                parsed.params,
+                parsed.query,
+                parsed.fragment,
+            )
+        ).rstrip("/")
+
+    return urlunparse(parsed).rstrip("/")
 
 
 def _handle_local_episodes() -> None:
@@ -67,13 +102,8 @@ def _collect_episode_links() -> List[str]:
     if arguments.episode:
         links.extend(arguments.episode)
 
-    # Convert s.to links to config.S_TO IP for now
-    links = [
-        link.replace("http://s.to", S_TO).replace("https://s.to", S_TO)
-        for link in links
-    ]
-
-    links = [link.rstrip("/") for link in links]
+    # Normalize links for aniworld.to and s.to (including legacy s.to IP URLs)
+    links = [_normalize_episode_link(link) for link in links]
 
     return generate_links(links, arguments)
 

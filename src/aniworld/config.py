@@ -1,4 +1,5 @@
 import logging
+import ipaddress
 import os
 import pathlib
 import platform
@@ -7,6 +8,7 @@ import tempfile
 from functools import lru_cache
 from importlib.metadata import PackageNotFoundError, version
 from packaging.version import Version, InvalidVersion
+from urllib.parse import urlparse
 from urllib3.exceptions import InsecureRequestWarning
 import urllib3
 import requests
@@ -18,7 +20,17 @@ from fake_useragent import UserAgent
 #########################################################################################
 
 ANIWORLD_TO = "https://aniworld.to"
-S_TO = "http://186.2.175.5"
+S_TO = "https://s.to"
+# Keep legacy s.to IP for backward compatibility with existing user links.
+S_TO_LEGACY_IP = "http://186.2.175.5"
+S_TO_HOST = urlparse(S_TO).netloc
+S_TO_LEGACY_HOST = urlparse(S_TO_LEGACY_IP).netloc
+S_TO_HOSTS = {S_TO_HOST, S_TO_LEGACY_HOST}
+try:
+    ipaddress.ip_address(S_TO_HOST)
+except ValueError:
+    if not S_TO_HOST.startswith("www."):
+        S_TO_HOSTS.add(f"www.{S_TO_HOST}")
 
 # Supported streaming sites with their URL patterns
 SUPPORTED_SITES = {
