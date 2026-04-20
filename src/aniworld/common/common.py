@@ -6,6 +6,7 @@ import subprocess
 import sys
 import os
 import re
+from urllib.parse import urlparse
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -18,6 +19,7 @@ from ..config import (
     MPV_DIRECTORY,
     ANIWORLD_TO,
     S_TO,
+    S_TO_HOSTS,
     MPV_SCRIPTS_DIRECTORY,
     DEFAULT_APPDATA_PATH,
     MPV_PATH,
@@ -487,7 +489,11 @@ def get_season_episode_count(slug: str, link: str = ANIWORLD_TO) -> Dict[int, in
         return _ANIME_DATA_CACHE[cache_key]
 
     try:
-        if S_TO not in link:
+        parsed_link = urlparse(link)
+        link_host = parsed_link.netloc.lower()
+        is_s_to_link = link_host in S_TO_HOSTS
+
+        if not is_s_to_link:
             base_url = f"{ANIWORLD_TO}/anime/stream/{slug}/"
         else:
             base_url = f"{S_TO}/serie/stream/{slug}/"
